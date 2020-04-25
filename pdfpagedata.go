@@ -1,6 +1,7 @@
 package pdfpagedata
 
 import (
+	"encoding/json"
 	"math/rand"
 	"strings"
 	"time"
@@ -10,93 +11,34 @@ import (
 	pdf "github.com/timdrysdale/unipdf/v3/model"
 )
 
-type PageData struct {
-	Exam       ExamDetails         `json:"exam"`
-	Author     AuthorDetails       `json:"author"`
-	Page       PageDetails         `json:"page"`
-	Contact    ContactDetails      `json:"page"`
-	Questions  []QuestionDetails   `json:"questions"`
-	Processing []ProcessingDetails `json:"processing"`
-	Custom     []CustomDetails     `json:"custom""`
-}
+func UnmarshalPageData(page *pdf.PdfPage) ([]PageData, error) {
 
-type ExamDetails struct {
-	CourseCode string `json:"courseCode"`
-	Diet       string `json:"diet"`
-	UUID       string `json:"UUID"`
-}
+	pageDatas := []PageData{}
 
-type AuthorDetails struct {
-	ExamNumber string `json:"examNumber"`
-	UUID       string `json:"UUID"`
-}
+	tokens, err := ReadPageData(page)
 
-type PageDetails struct {
-	UUID   string `json:"UUID"`
-	Number int    `json:"number"`
-}
+	if err != nil {
+		return pageDatas, err
+	}
 
-type ContactDetails struct {
-	Name    string `json:"name"`
-	UUID    string `json:"UUID"`
-	Email   string `json:"email"`
-	Address string `json:"address"`
-}
+	var lastError error
 
-// use section for (a), (b) and number for (i)
-type QuestionDetails struct {
-	UUID           string            `json:"UUID"`
-	Name           string            `json:"name"` //what to call it in a dropbox etc
-	Section        string            `json:"section"`
-	Number         int               `json:"number"` //No Harry Potter Platform 9&3/4 questions
-	Parts          []QuestionDetails `json:"parts"`
-	MarksAvailable float64           `json:"marksAvailable"`
-	MarksAwarded   float64           `json:"marksAwarded"`
-	Marking        []MarkingAction   `json:"markers"`
-	Moderating     []MarkingAction   `json:"moderators"`
-	Checking       []MarkingAction   `json:"checkers"`
-}
+	for _, token := range tokens {
 
-type MarkingAction struct {
-	Contact  ContactDetails `json:"contact"`
-	Mark     MarkDetails    `json:"mark"`
-	Done     bool           `json:"done"`
-	UnixTime int64          `json:"unixTime"`
-	Custom   CustomDetails  `json:"contact"`
-}
+		var pd PageData
 
-type MarkDetails struct {
-	Given     float64 `json:"given"`
-	Available float64 `json:"available"`
-	Comment   float64 `json:"comment"`
-}
+		if err := json.Unmarshal([]byte(token), &pd); err != nil {
+			lastError = err
+			continue
+		}
 
-type CustomDetails struct {
-	Key   string `json:"name"`
-	Value string `json:"value"`
-}
+		pageDatas = append(pageDatas, pd)
 
-type ProcessingDetails struct {
-	UUID       string             `json:"UUID"`
-	Previous   string             `json:"previous"`
-	UnixTime   int64              `json:"unixTime"`
-	Name       string             `json:"name"`
-	Parameters []ParameterDetails `json:"parameters"`
-	By         ContactDetails     `json:"by"`
-}
+	}
 
-type ParameterDetails struct {
-	Name     string `json:"name"`
-	Value    string `json:"value"`
-	Sequence int    `json:sequence"`
-}
+	return pageDatas, lastError
 
-const (
-	StartTag       = "<gradex-pagedata>"
-	EndTag         = "</gradex-pagedata>"
-	StartTagOffset = len(StartTag)
-	EndTagOffset   = len(EndTag)
-)
+}
 
 func ReadPageData(page *pdf.PdfPage) ([]string, error) {
 

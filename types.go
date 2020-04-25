@@ -4,10 +4,10 @@ type PageData struct {
 	Exam       ExamDetails         `json:"exam"`
 	Author     AuthorDetails       `json:"author"`
 	Page       PageDetails         `json:"page"`
-	Contact    ContactDetails      `json:"page"`
+	Contact    ContactDetails      `json:"contact"`
 	Questions  []QuestionDetails   `json:"questions"`
 	Processing []ProcessingDetails `json:"processing"`
-	Custom     []CustomDetails     `json:"custom""`
+	Custom     []CustomDetails     `json:"custom"`
 }
 
 type ExamDetails struct {
@@ -52,7 +52,7 @@ type MarkingAction struct {
 	Mark     MarkDetails    `json:"mark"`
 	Done     bool           `json:"done"`
 	UnixTime int64          `json:"unixTime"`
-	Custom   CustomDetails  `json:"contact"`
+	Custom   CustomDetails  `json:"custom"`
 }
 
 type MarkDetails struct {
@@ -78,7 +78,7 @@ type ProcessingDetails struct {
 type ParameterDetails struct {
 	Name     string `json:"name"`
 	Value    string `json:"value"`
-	Sequence int    `json:sequence"`
+	Sequence int    `json:"sequence"`
 }
 
 const (
