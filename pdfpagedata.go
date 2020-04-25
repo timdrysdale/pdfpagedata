@@ -1,7 +1,9 @@
 package pdfpagedata
 
 import (
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/timdrysdale/unipdf/v3/creator"
 	"github.com/timdrysdale/unipdf/v3/extractor"
@@ -14,6 +16,18 @@ const (
 	StartTagOffset = len(StartTag)
 	EndTagOffset   = len(EndTag)
 )
+
+func ReadPageData(page *pdf.PdfPage) ([]string, error) {
+
+	text, err := ReadPageString(page)
+
+	if err != nil {
+		return []string{text}, err
+	}
+
+	return ExtractPageData(text), nil
+
+}
 
 func ExtractPageData(pageText string) []string {
 
@@ -54,9 +68,16 @@ func ReadPageString(page *pdf.PdfPage) (string, error) {
 	return text, err
 }
 
+func WritePageData(c *creator.Creator, text string) {
+	WritePageString(c, StartTag+text+EndTag)
+}
+
 func WritePageString(c *creator.Creator, text string) {
 	p := c.NewParagraph(text)
-	p.SetFontSize(0.1)
-	p.SetPos(0.1, 0.1)
+	p.SetFontSize(0.000001)
+	rand.Seed(time.Now().UnixNano())
+	x := rand.Float64()*0.1 + 99999 //0.3
+	y := rand.Float64()*999 + 99999 //0.3
+	p.SetPos(x, y)
 	c.Draw(p)
 }
