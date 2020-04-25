@@ -2,6 +2,7 @@ package pdfpagedata
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -18,28 +19,127 @@ import (
 	"github.com/timdrysdale/unipdf/v3/model/optimize"
 )
 
-func assertEqual(t *testing.T, a interface{}, b interface{}) {
-	if a != b {
-		t.Fatalf("%s != %s", a, b)
+func TestWriteRead(t *testing.T) {
+
+	c := creator.New()
+	c.SetPageMargins(0, 0, 0, 0) // we're not printing so use the whole page
+	c.SetPageSize(creator.PageSizeA4)
+	c.NewPage()
+	text1 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":1}"
+	WritePageData(c, text1)
+	text2 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":2}"
+	c.NewPage()
+	WritePageData(c, text2)
+	c.NewPage()
+	// write to memory instead of a file
+	var buf bytes.Buffer
+
+	err := c.Write(&buf)
+	if err != nil {
+		t.Error(err)
 	}
+
+	// convert buffer to readseeker
+	var bufslice []byte
+	fbuf := filebuffer.New(bufslice)
+	fbuf.Write(buf.Bytes())
+
+	// read in from memory
+	pdfReader, err := model.NewPdfReader(fbuf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	page, err := pdfReader.GetPage(1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	textp1, err := ReadPageData(page)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	page2, err := pdfReader.GetPage(2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	textp2, err := ReadPageData(page2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assertEqual(t, text1, textp1[0])
+	assertEqual(t, text2, textp2[0])
+
 }
 
-// Mod from array to slice,
-// from https://www.golangprograms.com/golang-check-if-array-element-exists.html
-func itemExists(sliceType interface{}, item interface{}) bool {
-	slice := reflect.ValueOf(sliceType)
+func TestWriteReadOptimiser(t *testing.T) {
 
-	if slice.Kind() != reflect.Slice {
-		panic("Invalid data-type")
+	c := creator.New()
+	c.SetPageMargins(0, 0, 0, 0) // we're not printing so use the whole page
+	c.SetPageSize(creator.PageSizeA4)
+	c.NewPage()
+	text1 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":1}"
+	WritePageData(c, text1)
+	text2 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":2}"
+	c.NewPage()
+	WritePageData(c, text2)
+
+	// write to memory instead of a file
+	var buf bytes.Buffer
+
+	c.SetOptimizer(optimize.New(optimize.Options{
+		CombineDuplicateDirectObjects:   true,
+		CombineIdenticalIndirectObjects: true,
+		CombineDuplicateStreams:         true,
+		CompressStreams:                 true,
+		UseObjectStreams:                true,
+		ImageQuality:                    90,
+		ImageUpperPPI:                   150,
+	}))
+
+	err := c.Write(&buf)
+	if err != nil {
+		t.Error(err)
 	}
 
-	for i := 0; i < slice.Len(); i++ {
-		if slice.Index(i).Interface() == item {
-			return true
-		}
+	// convert buffer to readseeker
+	var bufslice []byte
+	fbuf := filebuffer.New(bufslice)
+	fbuf.Write(buf.Bytes())
+
+	// read in from memory
+	pdfReader, err := model.NewPdfReader(fbuf)
+	if err != nil {
+		t.Error(err)
+	}
+	page, err := pdfReader.GetPage(1)
+	if err != nil {
+		t.Error(err)
 	}
 
-	return false
+	textp1, err := ReadPageData(page)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	page2, err := pdfReader.GetPage(2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	textp2, err := ReadPageData(page2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assertEqual(t, text1, textp1[0])
+	assertEqual(t, text2, textp2[0])
+
 }
 
 func TestWriteReadDouble(t *testing.T) {
@@ -285,129 +385,6 @@ func TestWriteReadOtherText(t *testing.T) {
 
 }
 
-func TestWriteRead(t *testing.T) {
-
-	c := creator.New()
-	c.SetPageMargins(0, 0, 0, 0) // we're not printing so use the whole page
-	c.SetPageSize(creator.PageSizeA4)
-	c.NewPage()
-	text1 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":1}"
-	WritePageData(c, text1)
-	text2 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":2}"
-	c.NewPage()
-	WritePageData(c, text2)
-	c.NewPage()
-	// write to memory instead of a file
-	var buf bytes.Buffer
-
-	err := c.Write(&buf)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// convert buffer to readseeker
-	var bufslice []byte
-	fbuf := filebuffer.New(bufslice)
-	fbuf.Write(buf.Bytes())
-
-	// read in from memory
-	pdfReader, err := model.NewPdfReader(fbuf)
-	if err != nil {
-		t.Error(err)
-	}
-
-	page, err := pdfReader.GetPage(1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	textp1, err := ReadPageData(page)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	page2, err := pdfReader.GetPage(2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	textp2, err := ReadPageData(page2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	assertEqual(t, text1, textp1[0])
-	assertEqual(t, text2, textp2[0])
-
-}
-
-func TestWriteReadOptimiser(t *testing.T) {
-
-	c := creator.New()
-	c.SetPageMargins(0, 0, 0, 0) // we're not printing so use the whole page
-	c.SetPageSize(creator.PageSizeA4)
-	c.NewPage()
-	text1 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":1}"
-	WritePageData(c, text1)
-	text2 := "{\"exam\":\"ENGI99887\",\"number\":\"B12345\",\"page\":2}"
-	c.NewPage()
-	WritePageData(c, text2)
-
-	// write to memory instead of a file
-	var buf bytes.Buffer
-
-	c.SetOptimizer(optimize.New(optimize.Options{
-		CombineDuplicateDirectObjects:   true,
-		CombineIdenticalIndirectObjects: true,
-		CombineDuplicateStreams:         true,
-		CompressStreams:                 true,
-		UseObjectStreams:                true,
-		ImageQuality:                    90,
-		ImageUpperPPI:                   150,
-	}))
-
-	err := c.Write(&buf)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// convert buffer to readseeker
-	var bufslice []byte
-	fbuf := filebuffer.New(bufslice)
-	fbuf.Write(buf.Bytes())
-
-	// read in from memory
-	pdfReader, err := model.NewPdfReader(fbuf)
-	if err != nil {
-		t.Error(err)
-	}
-	page, err := pdfReader.GetPage(1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	textp1, err := ReadPageData(page)
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	page2, err := pdfReader.GetPage(2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	textp2, err := ReadPageData(page2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	assertEqual(t, text1, textp1[0])
-	assertEqual(t, text2, textp2[0])
-
-}
-
 func TestWriteOutputForAdobe(t *testing.T) {
 
 	outputPath := "./test/adobe-page-data.pdf"
@@ -587,4 +564,108 @@ func getPdfFieldData(inputPath, targetFieldName string) (string, error) {
 		return "", errors.New("field not found")
 	}
 	return "", nil
+}
+
+func TestMarshalling(t *testing.T) {
+
+	pd := PageData{
+		Exam: ExamDetails{
+			CourseCode: "ENGI12123",
+			Diet:       "2020-Summer",
+			UUID:       "69197384-fd15-42ac-ac16-82dbe4d52dd0",
+		},
+		Author: AuthorDetails{
+			ExamNumber: "B12345",
+			UUID:       "e4937a51-4a4a-45b8-bb79-1a841f2b0e78",
+		},
+		Page: PageDetails{
+			UUID:   "a94a71f5-b867-45f9-92f6-ddcc8c39bd9c",
+			Number: 15,
+		},
+	}
+
+	c := creator.New()
+	c.SetPageMargins(0, 0, 0, 0) // we're not printing so use the whole page
+	c.SetPageSize(creator.PageSizeA4)
+	c.NewPage()
+
+	MarshalPageData(c, &pd)
+
+	// write to memory instead of a file
+	var buf bytes.Buffer
+
+	c.SetOptimizer(optimize.New(optimize.Options{
+		CombineDuplicateDirectObjects:   true,
+		CombineIdenticalIndirectObjects: true,
+		CombineDuplicateStreams:         true,
+		CompressStreams:                 true,
+		UseObjectStreams:                true,
+		ImageQuality:                    90,
+		ImageUpperPPI:                   150,
+	}))
+
+	err := c.Write(&buf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// convert buffer to readseeker
+	var bufslice []byte
+	fbuf := filebuffer.New(bufslice)
+	fbuf.Write(buf.Bytes())
+
+	// read in from memory
+	pdfReader, err := model.NewPdfReader(fbuf)
+	if err != nil {
+		t.Error(err)
+	}
+	page, err := pdfReader.GetPage(1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	pdout, err := UnmarshalPageData(page)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(pd, pdout[0]) {
+		t.Error("struct doesn't match")
+	}
+
+}
+
+func assertEqual(t *testing.T, a interface{}, b interface{}) {
+	if a != b {
+		t.Fatalf("%s != %s", a, b)
+	}
+}
+
+// Mod from array to slice,
+// from https://www.golangprograms.com/golang-check-if-array-element-exists.html
+func itemExists(sliceType interface{}, item interface{}) bool {
+	slice := reflect.ValueOf(sliceType)
+
+	if slice.Kind() != reflect.Slice {
+		panic("Invalid data-type")
+	}
+
+	for i := 0; i < slice.Len(); i++ {
+		if slice.Index(i).Interface() == item {
+			return true
+		}
+	}
+
+	return false
+}
+func PrettyPrintStruct(layout interface{}) error {
+
+	json, err := json.MarshalIndent(layout, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(json))
+	return nil
 }

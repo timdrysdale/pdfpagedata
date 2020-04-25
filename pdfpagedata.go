@@ -40,6 +40,19 @@ func UnmarshalPageData(page *pdf.PdfPage) ([]PageData, error) {
 
 }
 
+func MarshalPageData(c *creator.Creator, pd *PageData) error {
+
+	token, err := json.Marshal(pd)
+	if err != nil {
+		return err
+	}
+
+	WritePageData(c, string(token))
+
+	return nil
+
+}
+
 func ReadPageData(page *pdf.PdfPage) ([]string, error) {
 
 	text, err := ReadPageString(page)
