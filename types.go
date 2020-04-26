@@ -5,9 +5,18 @@ type PageData struct {
 	Author     AuthorDetails       `json:"author"`
 	Page       PageDetails         `json:"page"`
 	Contact    ContactDetails      `json:"contact"`
+	Submission SubmissionDetails   `json:"submission"`
 	Questions  []QuestionDetails   `json:"questions"`
 	Processing []ProcessingDetails `json:"processing"`
 	Custom     []CustomDetails     `json:"custom"`
+}
+
+type SubmissionDetails struct {
+	FilePrefix       string `json:"filePrefix"`
+	OriginalFilename string `json:"originalFilename"`
+	OriginalFormat   string `json:"originalFormat"`
+	NewFilename      string `json:"newFilename"`
+	NewFormat        string `json:"newFormat"`
 }
 
 type ExamDetails struct {
