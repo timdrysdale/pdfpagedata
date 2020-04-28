@@ -2,8 +2,10 @@ package pdfpagedata
 
 import (
 	"encoding/json"
+	"errors"
 	"math/rand"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -11,6 +13,27 @@ import (
 	"github.com/timdrysdale/unipdf/v3/extractor"
 	pdf "github.com/timdrysdale/unipdf/v3/model"
 )
+
+func SelectByLastProcess(pd PageData) (ProcessingDetails, error) {
+	if len(pd.Processing) < 1 {
+		return ProcessingDetails{}, errors.New("empty")
+	}
+	if len(pd.Processing) == 1 {
+		return pd.Processing[0], nil
+	}
+
+	Process := pd.Processing
+	sort.SliceStable(Process, func(i, j int) bool {
+		if Process[i].Sequence == Process[j].Sequence {
+			return Process[i].UnixTime > Process[j].UnixTime
+		} else {
+			return Process[i].Sequence > Process[j].Sequence
+		}
+	})
+
+	return Process[0], nil
+
+}
 
 func GetLen(input map[int][]PageData) int {
 	items := 0

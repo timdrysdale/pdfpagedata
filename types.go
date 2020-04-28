@@ -58,6 +58,8 @@ type QuestionDetails struct {
 	Marking        []MarkingAction   `json:"markers"`
 	Moderating     []MarkingAction   `json:"moderators"`
 	Checking       []MarkingAction   `json:"checkers"`
+	Sequence       int               `json:"sequence"`
+	UnixTime       int64             `json:"unixTime"`
 }
 
 type MarkingAction struct {

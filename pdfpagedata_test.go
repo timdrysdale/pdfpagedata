@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mattetti/filebuffer"
 	"github.com/stretchr/testify/assert"
@@ -18,6 +19,74 @@ import (
 	pdf "github.com/timdrysdale/unipdf/v3/model"
 	"github.com/timdrysdale/unipdf/v3/model/optimize"
 )
+
+func TestSelectByLastProcess(t *testing.T) {
+
+	//throw error on empty, obvs
+	_, err := SelectByLastProcess(PageData{})
+	assert.Error(t, err)
+
+	now := time.Now().UnixNano()
+
+	testSet := PageData{
+		Processing: []ProcessingDetails{
+			ProcessingDetails{
+				Name:     "first",
+				Sequence: 0,
+				UnixTime: now - 3600000,
+			},
+			ProcessingDetails{
+				Name:     "second",
+				Sequence: 1,
+				UnixTime: now - 1800000,
+			},
+			ProcessingDetails{
+				Name:     "third",
+				Sequence: 2,
+				UnixTime: now - 100000,
+			},
+			ProcessingDetails{
+				Name:     "fourth",
+				Sequence: 2,
+				UnixTime: now,
+			},
+		},
+	}
+
+	proc, err := SelectByLastProcess(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, "fourth", proc.Name)
+
+	testSet = PageData{
+		Processing: []ProcessingDetails{
+			ProcessingDetails{
+				Name:     "fifth",
+				Sequence: 3,
+				UnixTime: now - 3600000,
+			},
+			ProcessingDetails{
+				Name:     "second",
+				Sequence: 1,
+				UnixTime: now - 1800000,
+			},
+			ProcessingDetails{
+				Name:     "third",
+				Sequence: 2,
+				UnixTime: now - 100000,
+			},
+			ProcessingDetails{
+				Name:     "fourth",
+				Sequence: 2,
+				UnixTime: now,
+			},
+		},
+	}
+
+	proc, err = SelectByLastProcess(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, "fifth", proc.Name)
+
+}
 
 func TestGetLen(t *testing.T) {
 
