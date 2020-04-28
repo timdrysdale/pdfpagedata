@@ -20,6 +20,43 @@ import (
 	"github.com/timdrysdale/unipdf/v3/model/optimize"
 )
 
+func TestPruneOldRevsions(t *testing.T) {
+
+	testSet := make(map[int][]PageData)
+
+	testSet[0] = []PageData{
+		PageData{
+			Revision: 0,
+		},
+		PageData{
+			Revision: 2,
+		},
+		PageData{
+			Revision: 1,
+		},
+	}
+	testSet[1] = []PageData{
+		PageData{
+			Revision: 0,
+		},
+		PageData{
+			Revision: 1,
+		},
+	}
+	testSet[2] = []PageData{
+		PageData{
+			Revision: 0,
+		},
+	}
+	assert.Equal(t, 6, GetLen(testSet))
+	err := PruneOldRevisions(&testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, GetLen(testSet), 3)
+	assert.Equal(t, testSet[0][0].Revision, 2)
+	assert.Equal(t, testSet[1][0].Revision, 1)
+	assert.Equal(t, testSet[2][0].Revision, 0)
+}
+
 func TestSelectPageDataByRevision(t *testing.T) {
 
 	//throw error on empty, obvs

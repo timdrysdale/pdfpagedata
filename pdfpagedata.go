@@ -23,6 +23,17 @@ import (
 // sequence number is a step in sequence, not another
 // name for a particular process
 
+func PruneOldRevisions(pdmap *map[int][]PageData) error {
+	for k, v := range *pdmap {
+		pd, err := SelectPageDataByRevision(v)
+		if err != nil {
+			return err
+		}
+		(*pdmap)[k] = []PageData{pd}
+	}
+	return nil
+}
+
 func SelectPageDataByRevision(pds []PageData) (PageData, error) {
 	if len(pds) < 1 {
 		return PageData{}, errors.New("empty")
