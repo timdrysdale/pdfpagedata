@@ -3,6 +3,7 @@ package pdfpagedata
 import (
 	"encoding/json"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -10,6 +11,49 @@ import (
 	"github.com/timdrysdale/unipdf/v3/extractor"
 	pdf "github.com/timdrysdale/unipdf/v3/model"
 )
+
+func GetLen(input map[int][]PageData) int {
+	items := 0
+	for _, v := range input {
+		for _ = range v {
+			items++
+		}
+	}
+	return items
+}
+
+func GetPageDataFromFile(inputPath string) (map[int][]PageData, error) {
+
+	docData := make(map[int][]PageData)
+
+	texts, err := OutputPdfText(inputPath)
+	if err != nil {
+		return docData, err
+	}
+
+	var pds []PageData
+
+	//one text per page
+	for i, text := range texts {
+
+		strs := ExtractPageData(text)
+
+		for _, str := range strs {
+			var pd PageData
+
+			if err := json.Unmarshal([]byte(str), &pd); err != nil {
+				continue
+			}
+
+			pds = append(pds, pd)
+		}
+
+		docData[i] = pds
+	}
+
+	return docData, nil
+
+}
 
 func UnmarshalPageData(page *pdf.PdfPage) ([]PageData, error) {
 
@@ -116,4 +160,70 @@ func WritePageString(c *creator.Creator, text string) {
 	y := rand.Float64()*999 + 99999 //0.3
 	p.SetPos(x, y)
 	c.Draw(p)
+}
+
+// this function is for use in a co-operative
+// environment - you can slip one past the gaolie
+// in the custom fields in Questions/Processing/Custom
+func StripAuthorIdentity(pd PageData) PageData {
+
+	safe := PageData{}
+
+	safe.Exam = pd.Exam
+	safe.Author = AuthorDetails{Anonymous: pd.Author.Anonymous}
+	safe.Page = pd.Page
+	safe.Contact = pd.Contact
+	safe.Submission = SubmissionDetails{} //nothing!
+	safe.Questions = pd.Questions
+	safe.Processing = pd.Processing
+	safe.Custom = pd.Custom
+
+	return safe
+}
+
+// outputPdfText produces array of strings, one string per page
+// mod from https://github.com/unidoc/unipdf-examples/blob/master/text/pdf_extract_text.go
+func OutputPdfText(inputPath string) ([]string, error) {
+
+	texts := []string{}
+
+	f, err := os.Open(inputPath)
+	if err != nil {
+		return texts, err
+	}
+
+	defer f.Close()
+
+	pdfReader, err := pdf.NewPdfReader(f)
+	if err != nil {
+		return texts, err
+	}
+
+	numPages, err := pdfReader.GetNumPages()
+	if err != nil {
+		return texts, err
+	}
+
+	for i := 0; i < numPages; i++ {
+		pageNum := i + 1
+
+		page, err := pdfReader.GetPage(pageNum)
+		if err != nil {
+			return texts, err
+		}
+
+		ex, err := extractor.New(page)
+		if err != nil {
+			return texts, err
+		}
+
+		text, err := ex.ExtractText()
+		if err != nil {
+			return texts, err
+		}
+
+		texts = append(texts, text)
+	}
+
+	return texts, nil
 }

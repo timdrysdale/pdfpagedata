@@ -19,6 +19,21 @@ import (
 	"github.com/timdrysdale/unipdf/v3/model/optimize"
 )
 
+func TestGetLen(t *testing.T) {
+
+	foo := make(map[int][]PageData)
+
+	bar := make([]PageData, 5)
+
+	dab := make([]PageData, 6)
+
+	foo[10] = bar
+	foo[99] = dab
+
+	assert.Equal(t, GetLen(foo), 11)
+
+}
+
 func TestWriteRead(t *testing.T) {
 
 	c := creator.New()
@@ -575,8 +590,8 @@ func TestMarshalling(t *testing.T) {
 			UUID:       "69197384-fd15-42ac-ac16-82dbe4d52dd0",
 		},
 		Author: AuthorDetails{
-			ExamNumber: "B12345",
-			UUID:       "e4937a51-4a4a-45b8-bb79-1a841f2b0e78",
+			Anonymous: "B12345",
+			Identity:  "e4937a51-4a4a-45b8-bb79-1a841f2b0e78",
 		},
 		Page: PageDetails{
 			UUID:   "a94a71f5-b867-45f9-92f6-ddcc8c39bd9c",

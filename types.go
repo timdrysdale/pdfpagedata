@@ -11,6 +11,7 @@ type PageData struct {
 	Custom     []CustomDetails     `json:"custom"`
 }
 
+// don't use this in anonymous pages
 type SubmissionDetails struct {
 	FilePrefix       string `json:"filePrefix"`
 	OriginalFilename string `json:"originalFilename"`
@@ -22,17 +23,20 @@ type SubmissionDetails struct {
 type ExamDetails struct {
 	CourseCode string `json:"courseCode"`
 	Diet       string `json:"diet"`
+	Date       string `json:"date"`
 	UUID       string `json:"UUID"`
 }
 
 type AuthorDetails struct {
-	ExamNumber string `json:"examNumber"`
-	UUID       string `json:"UUID"`
+	Anonymous string `json:"Anonymous"`
+	Identity  string `json:"Identity"`
 }
 
 type PageDetails struct {
-	UUID   string `json:"UUID"`
-	Number int    `json:"number"`
+	UUID     string `json:"UUID"`
+	Number   int    `json:"number"`
+	Of       int    `json:"of"`
+	Filename string `json:"filename"`
 }
 
 type ContactDetails struct {
@@ -82,6 +86,7 @@ type ProcessingDetails struct {
 	Name       string             `json:"name"`
 	Parameters []ParameterDetails `json:"parameters"`
 	By         ContactDetails     `json:"by"`
+	Sequence   int                `json:"sequence"`
 }
 
 type ParameterDetails struct {
