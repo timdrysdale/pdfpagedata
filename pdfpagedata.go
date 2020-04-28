@@ -14,7 +14,32 @@ import (
 	pdf "github.com/timdrysdale/unipdf/v3/model"
 )
 
-func SelectByLastProcess(pd PageData) (ProcessingDetails, error) {
+// UnixTime is not all that portable as it is ...
+// so only using it as a tiebreaker
+// when likely that the process was repeated on the
+// same machine
+// For cases where marking is repeated after checking
+// The overlay SHOULD just use a higher sequence number,
+// sequence number is a step in sequence, not another
+// name for a particular process
+
+func SelectPageDataByRevision(pds []PageData) (PageData, error) {
+	if len(pds) < 1 {
+		return PageData{}, errors.New("empty")
+	}
+	if len(pds) == 1 {
+		return pds[0], nil
+	}
+
+	sort.SliceStable(pds, func(i, j int) bool {
+		return pds[i].Revision > pds[j].Revision
+
+	})
+
+	return pds[0], nil
+}
+
+func SelectProcessByLast(pd PageData) (ProcessingDetails, error) {
 	if len(pd.Processing) < 1 {
 		return ProcessingDetails{}, errors.New("empty")
 	}

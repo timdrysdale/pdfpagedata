@@ -9,6 +9,7 @@ type PageData struct {
 	Questions  []QuestionDetails   `json:"questions"`
 	Processing []ProcessingDetails `json:"processing"`
 	Custom     []CustomDetails     `json:"custom"`
+	Revision   int                 `json:"revision"`
 }
 
 // don't use this in anonymous pages

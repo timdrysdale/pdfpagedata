@@ -20,15 +20,75 @@ import (
 	"github.com/timdrysdale/unipdf/v3/model/optimize"
 )
 
-func TestSelectByLastProcess(t *testing.T) {
+func TestSelectPageDataByRevision(t *testing.T) {
 
 	//throw error on empty, obvs
-	_, err := SelectByLastProcess(PageData{})
+	_, err := SelectPageDataByRevision([]PageData{})
+	assert.Error(t, err)
+
+	testSet := []PageData{
+		PageData{
+			Revision: 0,
+		},
+	}
+
+	pd, err := SelectPageDataByRevision(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, pd.Revision)
+
+	testSet = []PageData{
+		PageData{
+			Revision: 0,
+		},
+		PageData{
+			Revision: 1,
+		},
+	}
+
+	pd, err = SelectPageDataByRevision(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, pd.Revision)
+
+	testSet = []PageData{
+		PageData{
+			Revision: 0,
+		},
+		PageData{
+			Revision: 2,
+		},
+		PageData{
+			Revision: 1,
+		},
+	}
+	pd, err = SelectPageDataByRevision(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, pd.Revision)
+
+}
+
+func TestSelectProcessByLast(t *testing.T) {
+
+	//throw error on empty, obvs
+	_, err := SelectProcessByLast(PageData{})
 	assert.Error(t, err)
 
 	now := time.Now().UnixNano()
 
 	testSet := PageData{
+		Processing: []ProcessingDetails{
+			ProcessingDetails{
+				Name:     "first",
+				Sequence: 0,
+				UnixTime: now - 3600000,
+			},
+		},
+	}
+
+	proc, err := SelectProcessByLast(testSet)
+	assert.NoError(t, err)
+	assert.Equal(t, "first", proc.Name)
+
+	testSet = PageData{
 		Processing: []ProcessingDetails{
 			ProcessingDetails{
 				Name:     "first",
@@ -53,7 +113,7 @@ func TestSelectByLastProcess(t *testing.T) {
 		},
 	}
 
-	proc, err := SelectByLastProcess(testSet)
+	proc, err = SelectProcessByLast(testSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "fourth", proc.Name)
 
@@ -82,7 +142,7 @@ func TestSelectByLastProcess(t *testing.T) {
 		},
 	}
 
-	proc, err = SelectByLastProcess(testSet)
+	proc, err = SelectProcessByLast(testSet)
 	assert.NoError(t, err)
 	assert.Equal(t, "fifth", proc.Name)
 
