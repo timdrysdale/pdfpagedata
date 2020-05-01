@@ -22,6 +22,47 @@ import (
 // The overlay SHOULD just use a higher sequence number,
 // sequence number is a step in sequence, not another
 // name for a particular process
+const (
+	Raw             = iota
+	ReadyToMark     = iota
+	Marked          = iota
+	ReadyToModerate = iota
+	Moderated       = iota
+	ReadyToCheck    = iota
+	Checked         = iota
+)
+
+type PdfSummary struct {
+	CourseCode  string
+	PreparedFor string
+	ToDo        string
+}
+
+func TriagePdf(inputPath string) (PdfSummary, error) {
+
+	pdfs := PdfSummary{}
+
+	pdm, err := GetPageDataFromFile(inputPath)
+	if err != nil {
+		return pdfs, err
+	}
+
+	err = PruneOldRevisions(&pdm)
+	if err != nil {
+		return pdfs, err
+	}
+
+OUTER:
+	for _, v := range pdm {
+		for _, pd := range v {
+			pdfs.PreparedFor = pd.PreparedFor
+			pdfs.ToDo = pd.ToDo
+			pdfs.CourseCode = pd.Exam.CourseCode
+			break OUTER
+		}
+	}
+	return pdfs, nil
+}
 
 func PruneOldRevisions(pdmap *map[int][]PageData) error {
 	for k, v := range *pdmap {
@@ -48,6 +89,25 @@ func SelectPageDataByRevision(pds []PageData) (PageData, error) {
 	})
 
 	return pds[0], nil
+}
+func SelectQuestionByLast(pd PageData) (QuestionDetails, error) {
+	if len(pd.Questions) < 1 {
+		return QuestionDetails{}, errors.New("empty")
+	}
+	if len(pd.Questions) == 1 {
+		return pd.Questions[0], nil
+	}
+
+	Q := pd.Questions
+	sort.SliceStable(Q, func(i, j int) bool {
+		if Q[i].Sequence == Q[j].Sequence {
+			return Q[i].UnixTime > Q[j].UnixTime
+		} else {
+			return Q[i].Sequence > Q[j].Sequence
+		}
+	})
+
+	return Q[0], nil
 }
 
 func SelectProcessByLast(pd PageData) (ProcessingDetails, error) {
@@ -90,10 +150,9 @@ func GetPageDataFromFile(inputPath string) (map[int][]PageData, error) {
 		return docData, err
 	}
 
-	var pds []PageData
-
 	//one text per page
 	for i, text := range texts {
+		var pds []PageData
 
 		strs := ExtractPageData(text)
 

@@ -1,15 +1,17 @@
 package pdfpagedata
 
 type PageData struct {
-	Exam       ExamDetails         `json:"exam"`
-	Author     AuthorDetails       `json:"author"`
-	Page       PageDetails         `json:"page"`
-	Contact    ContactDetails      `json:"contact"`
-	Submission SubmissionDetails   `json:"submission"`
-	Questions  []QuestionDetails   `json:"questions"`
-	Processing []ProcessingDetails `json:"processing"`
-	Custom     []CustomDetails     `json:"custom"`
-	Revision   int                 `json:"revision"`
+	Exam        ExamDetails         `json:"exam"`
+	Author      AuthorDetails       `json:"author"`
+	Page        PageDetails         `json:"page"`
+	Contact     ContactDetails      `json:"contact"`
+	Submission  SubmissionDetails   `json:"submission"`
+	Questions   []QuestionDetails   `json:"questions"`
+	Processing  []ProcessingDetails `json:"processing"`
+	Custom      []CustomDetails     `json:"custom"`
+	Revision    int                 `json:"revision"`
+	PreparedFor string              `json:"preparedfor"`
+	ToDo        string              `json:"todo"`
 }
 
 // don't use this in anonymous pages
@@ -61,9 +63,11 @@ type QuestionDetails struct {
 	Checking       []MarkingAction   `json:"checkers"`
 	Sequence       int               `json:"sequence"`
 	UnixTime       int64             `json:"unixTime"`
+	Previous       string            `json:"previous"`
 }
 
 type MarkingAction struct {
+	Actor    string         `json:"actor"`
 	Contact  ContactDetails `json:"contact"`
 	Mark     MarkDetails    `json:"mark"`
 	Done     bool           `json:"done"`
